@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Kharcha Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="card auth-card wide-card">
+        <div class="card-header">
+            <h1>Create Account</h1>
+        </div>
+        <p class="lead">Register your private account. To add or view any expense, you must set up your username and password.</p>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" class="standard-form">
+            <div class="row">
+                <div class="form-group flex-1">
+                    <label for="username">Username *</label>
+                    <input type="text" name="username" id="username" value="{{ username or '' }}" placeholder="Choose a unique username" required autocomplete="username">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group flex-1">
+                    <label for="password">Password *</label>
+                    <input type="password" name="password" id="password" placeholder="Create a password" required autocomplete="new-password">
+                </div>
+                <div class="form-group flex-1">
+                    <label for="confirm_password">Confirm Password *</label>
+                    <input type="password" name="confirm_password" id="confirm_password" placeholder="Repeat your password" required autocomplete="new-password">
+                </div>
+            </div>
+
+            <!-- Security Questions & Backup Notice -->
+            <div class="security-questions-section">
+                <div class="section-title">
+                    <span class="icon">🛡️</span> Security & Account Recovery Questions
+                </div>
+                
+                <div class="backup-note-box">
+                    <strong>Note as a backup:</strong> If you ever forget your password, you can answer these 3 questions to reset it.
+                </div>
+
+                <div class="form-group">
+                    <label for="q1_school">1. Which school did you study last? *</label>
+                    <input type="text" name="q1_school" id="q1_school" placeholder="e.g. Army Public School, City School..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="q2_nickname">2. What is your nickname? *</label>
+                    <input type="text" name="q2_nickname" id="q2_nickname" placeholder="e.g. Mani, Alex, Sunny..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="q3_mother">3. What is your mother's name? *</label>
+                    <input type="text" name="q3_mother" id="q3_mother" placeholder="e.g. Fatima, Sarah..." required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Complete Registration & Enter →</button>
+
+            <div class="auth-links-footer">
+                <span>Already have an account?</span>
+                <a href="{{ url_for('auth.login') }}" class="highlight-link">Sign In</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

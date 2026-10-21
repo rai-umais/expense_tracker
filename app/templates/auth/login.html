@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Kharcha Tracker{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="card auth-card">
+        <div class="card-header">
+            <h1>Welcome Back</h1>
+        </div>
+        <p class="lead">Log in with your username and password to manage your expenses.</p>
+
+        <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next', '')) }}" class="standard-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" value="{{ username or '' }}" placeholder="Enter your username" required autofocus autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <div class="label-with-link">
+                    <label for="password">Password</label>
+                    <a href="{{ url_for('auth.reset_password') }}" class="forgot-link">Forgot Password?</a>
+                </div>
+                <input type="password" name="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit">Sign In →</button>
+
+            <div class="auth-links-footer">
+                <span>Don't have an account yet?</span>
+                <a href="{{ url_for('auth.register') }}" class="highlight-link">Register Here</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

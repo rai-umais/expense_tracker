@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Kharcha Tracker{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+    <!-- Top Greeting & Header -->
+    <div class="dashboard-topbar">
+        <div>
+            <h1 class="page-title">Personal Financial Overview</h1>
+            <p class="subtitle">Track your everyday expenses, grants, and personal loans in one place.</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="{{ url_for('expenses.add_transaction') }}" class="btn-primary-action">+ Add Transaction</a>
+        </div>
+    </div>
+
+    <!-- Arithmetic Summary Stat Cards -->
+    <div class="metrics-grid">
+        <div class="metric-card {% if net_balance >= 0 %}metric-positive{% else %}metric-negative{% endif %}">
+            <div class="metric-header">
+                <span class="metric-label">Net Balance</span>
+                <span class="metric-icon">⚖️</span>
+            </div>
+            <div class="metric-value">
+                {% if net_balance >= 0 %}+${{ "%.2f"|format(net_balance) }}{% else %}-${{ "%.2f"|format(-net_balance) }}{% endif %}
+            </div>
+            <div class="metric-subtext">Total Inflows minus Total Outflows</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-label">Total Paid (Outflows)</span>
+                <span class="metric-icon">📤</span>
+            </div>
+            <div class="metric-value text-outflow">
+                -${{ "%.2f"|format(total_paid) }}
+            </div>
+            <div class="metric-subtext">Expenses (${{ "%.2f"|format(expenses_total) }}) + Loans Given (${{ "%.2f"|format(loans_given_total) }})</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-label">Total Received (Inflows)</span>
+                <span class="metric-icon">📥</span>
+            </div>
+            <div class="metric-value text-inflow">
+                +${{ "%.2f"|format(total_received) }}
+            </div>
+            <div class="metric-subtext">Grants (${{ "%.2f"|format(grants_total) }}) + Loans Received (${{ "%.2f"|format(loans_received_total) }})</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-label">Loans Lent (Given Out)</span>
+                <span class="metric-icon">🤝</span>
+            </div>
+            <div class="metric-value text-loans-given">
+                ${{ "%.2f"|format(loans_given_total) }}
+            </div>
+            <div class="metric-subtext">Pending to be returned to you</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-header">
+                <span class="metric-label">Loans Borrowed (Taken)</span>
+                <span class="metric-icon">💳</span>
+            </div>
+            <div class="metric-value text-loans-taken">
+                ${{ "%.2f"|format(loans_received_total) }}
+            </div>
+            <div class="metric-subtext">Payable / due to others</div>
+        </div>
+    </div>
+
+    <!-- Filter and Search Toolbar -->
+    <div class="card filter-card">
+        <form method="GET" action="{{ url_for('expenses.dashboard') }}" class="filter-form">
+            <div class="filter-group">
+                <label for="filter_type">Type</label>
+                <select name="type" id="filter_type" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    <option value="expense" {% if filter_type == 'expense' %}selected{% endif %}>Expense (Paid)</option>
+                    <option value="grant" {% if filter_type == 'grant' %}selected{% endif %}>Grant / Income (Received)</option>
+                    <option value="loan_given" {% if filter_type == 'loan_given' %}selected{% endif %}>Loan Given (Paid Out)</option>
+                    <option value="loan_received" {% if filter_type == 'loan_received' %}selected{% endif %}>Loan Taken (Received)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter_category">Category</label>
+                <select name="category" id="filter_category" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in available_categories %}
+                        <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter_month">Month</label>
+                <input type="month" name="month" id="filter_month" value="{{ filter_month }}" onchange="this.form.submit()">
+            </div>
+
+            <div class="filter-group search-flex">
+                <label for="search_query">Search</label>
+                <input type="text" name="q" id="search_query" value="{{ search_query }}" placeholder="Search category or notes...">
+            </div>
+
+            <div class="filter-group sort-flex">
+                <label for="sort_by">Sort By</label>
+                <select name="sort" id="sort_by" onchange="this.form.submit()">
+                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                    <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Amount (Highest First)</option>
+                    <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Amount (Lowest First)</option>
+                </select>
+            </div>
+
+            <div class="filter-buttons">
+                <button type="submit" class="btn-filter">Search</button>
+                {% if filter_type or filter_category or filter_month or search_query or sort_by != 'date_desc' %}
+                    <a href="{{ url_for('expenses.dashboard') }}" class="btn-reset-filters">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Expense Records Table -->
+    <div class="card table-card">
+        <div class="table-header-row">
+            <h2>All Recorded Transactions ({{ transactions|length }})</h2>
+            {% if filter_type or filter_category or filter_month or search_query %}
+                <div class="filter-badge-summary">
+                    Filtered Outflow: <span class="text-outflow">-${{ "%.2f"|format(filtered_paid) }}</span> &bull; 
+                    Inflow: <span class="text-inflow">+${{ "%.2f"|format(filtered_received) }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if transactions %}
+            <div class="table-responsive">
+                <table class="expenses-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Type & Flow</th>
+                            <th>Note / Details</th>
+                            <th class="text-right">Amount</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                            <tr class="tx-row">
+                                <td class="tx-date">{{ tx.transaction_date.strftime('%b %d, %Y') }}</td>
+                                <td class="tx-category"><strong>{{ tx.category }}</strong></td>
+                                <td class="tx-type">
+                                    <span class="badge {{ tx.badge_class }}">
+                                        {{ tx.badge_label }}
+                                    </span>
+                                </td>
+                                <td class="tx-note">
+                                    {{ tx.note if tx.note else '<span class="text-muted">—</span>'|safe }}
+                                </td>
+                                <td class="tx-amount text-right">
+                                    {% if tx.flow == 'paid' %}
+                                        <span class="amt-paid">-${{ "%.2f"|format(tx.amount) }}</span>
+                                    {% else %}
+                                        <span class="amt-received">+${{ "%.2f"|format(tx.amount) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="tx-actions text-center">
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('expenses.edit_transaction', id=tx.id) }}" class="btn-action btn-edit" title="Edit">✎</a>
+                                        <button type="button" class="btn-action btn-delete" title="Delete" onclick="confirmDeleteTransaction({{ tx.id }}, '{{ tx.category|replace("'", "\\'") }}', {{ tx.amount }})">✕</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📂</div>
+                <h3>No transactions found</h3>
+                <p>
+                    {% if filter_type or filter_category or filter_month or search_query %}
+                        No records match your selected filters. Try clearing them to see all records.
+                    {% else %}
+                        You haven't recorded any expenses, loans, or grants yet.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('expenses.add_transaction') }}" class="btn-submit" style="display:inline-block; max-width:240px; margin-top:16px;">
+                    + Add Your First Expense
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Transaction Modal -->
+<div id="deleteTxModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Delete Transaction</h2>
+            <button type="button" class="modal-close" onclick="closeDeleteTxModal()">×</button>
+        </div>
+        <p id="deleteTxModalText" class="modal-warning">
+            Are you sure you want to permanently delete this transaction?
+        </p>
+        <form id="deleteTxForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeDeleteTxModal()">Cancel</button>
+                <button type="submit" class="btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function confirmDeleteTransaction(txId, category, amount) {
+        const modal = document.getElementById('deleteTxModal');
+        const form = document.getElementById('deleteTxForm');
+        const text = document.getElementById('deleteTxModalText');
+        
+        form.action = `/expenses/${txId}/delete`;
+        text.innerHTML = `Are you sure you want to delete the record for <strong>"${category}"</strong> ($${amount.toFixed(2)})? This cannot be undone.`;
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteTxModal() {
+        const modal = document.getElementById('deleteTxModal');
+        if (modal) modal.style.display = 'none';
+    }
+</script>
+{% endblock %}
