@@ -83,7 +83,7 @@ expense_tracker/
 
 ---
 
-## 🚀 Getting Started Locally
+##  Getting Started Locally
 
 ### 1. Install Dependencies
 ```bash
@@ -104,14 +104,3 @@ Open your browser at `http://127.0.0.1:5000`.
 ```bash
 python test_app.py
 ```
-
----
-
-## 🌐 Deploying to Vercel
-
-1. **Push your code to GitHub**.
-2. **Import the repository into Vercel**.
-3. **Configure Environment Variables** in the Vercel Dashboard:
-   - `SECRET_KEY`: A secure random string.
-   - `DATABASE_URL`: A hosted PostgreSQL database URL (e.g., from [Neon.tech](https://neon.tech), [Supabase](https://supabase.com), or [Render Postgres](https://render.com)).
-4. **Deploy**: Vercel will automatically use `vercel.json` and `api/index.py` to serve the application as a Python serverless function.
